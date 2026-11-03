@@ -1,0 +1,57 @@
+{
+  "name": "Napkins",
+  "short_name": "Napkins",
+  "description": "Your Back of the Napkin notes, offline and full screen.",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "display_override": [
+    "fullscreen",
+    "standalone"
+  ],
+  "orientation": "any",
+  "background_color": "#d5dcd2",
+  "theme_color": "#d5dcd2",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "share_target": {
+    "action": "./share",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url",
+      "files": [
+        {
+          "name": "file",
+          "accept": [
+            "application/json",
+            ".json",
+            "image/svg+xml",
+            ".svg",
+            "text/plain",
+            ".txt"
+          ]
+        }
+      ]
+    }
+  }
+}
