@@ -10,7 +10,7 @@
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="icon" href="./icon-192.png">
 <link rel="apple-touch-icon" href="./icon-192.png">
-<!-- napkin viewer c89b0f7e90 -->
+<!-- napkin viewer e8ecc46ca8 -->
 <script>
 // Napkin Viewer: a local stand-in for the claude.ai artifact runtime, so the same napkin page runs
 // offline on a phone. Data lives in IndexedDB; there is no Claude, so the conversation is read-only.
@@ -502,7 +502,7 @@ button:disabled { cursor: default; }
 .hl.hl-line { fill: none; stroke: var(--hl); stroke-width: 6; }
 .qpin circle { fill: var(--sel); }
 .qpin text { fill: #fff; font: 700 15px var(--font-ui); }
-.face text { fill: currentColor; }
+.face text, .look-stage text { fill: currentColor; }
 .pen-blue { color: var(--pen-blue); }
 .pen-red { color: var(--pen-red); }
 .pen-black { color: var(--pen-black); }
@@ -978,6 +978,15 @@ button:disabled { cursor: default; }
     padding-bottom: max(16px, env(safe-area-inset-bottom, 0px));
   }
 }
+.look-btn { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--panel-line); background: var(--panel); color: inherit; border-radius: 999px; padding: 6px 12px; font: inherit; font-size: .84rem; cursor: pointer; }
+.look-btn svg { width: 18px; height: 18px; }
+@media (max-width: 559.98px) { .look-btn .lbl { display: none; } .look-btn { padding: 8px 10px; } }
+.look { position: fixed; inset: 0; z-index: 42; background: var(--table); display: flex; flex-direction: column; }
+.look-stage { flex: 1; min-height: 0; position: relative; touch-action: none; overflow: hidden; cursor: grab; }
+.look-stage:active { cursor: grabbing; }
+.look-stage svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.look-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px; padding: 8px max(10px, env(safe-area-inset-right, 0px)) max(10px, env(safe-area-inset-bottom, 0px)) max(10px, env(safe-area-inset-left, 0px)); background: var(--panel); border-top: 1px solid var(--panel-line); }
+.look-where { font-size: .8rem; color: var(--table-muted); min-width: 7em; text-align: center; }
 .toast {
   position: fixed;
   z-index: 45;
@@ -1064,6 +1073,10 @@ button:disabled { cursor: default; }
             <span class="lbl">Select</span>
           </button>
         </div>
+        <button type="button" class="look-btn" id="look-open" title="Look closer: full screen with free zoom (L)" aria-label="Look closer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/><path d="M8 10.5h5M10.5 8v5"/></svg>
+          <span class="lbl">Look</span>
+        </button>
         <span class="tool-group" id="pens" hidden>
           <button class="ibtn" id="pen-k" type="button" aria-pressed="true" aria-label="Black pen"><span class="swatch k"></span></button>
           <button class="ibtn" id="pen-r" type="button" aria-pressed="false" aria-label="Red pen"><span class="swatch r"></span></button>
@@ -1221,6 +1234,17 @@ button:disabled { cursor: default; }
   <div class="rowbtns">
     <button class="btn small" type="button" id="ctx-select">Copy</button>
     <button class="btn small" type="button" id="ctx-save">Save as a file</button>
+  </div>
+</div>
+<div class="look" id="look" role="dialog" aria-modal="true" aria-label="Look closer" hidden>
+  <div class="look-stage" id="look-stage"></div>
+  <div class="look-bar">
+    <button class="btn small" type="button" id="look-prev" aria-label="Previous napkin">‹</button>
+    <span class="look-where" id="look-where"></span>
+    <button class="btn small" type="button" id="look-next" aria-label="Next napkin">›</button>
+    <button class="btn small" type="button" id="look-flip">Flip</button>
+    <button class="btn small" type="button" id="look-fit">Whole side</button>
+    <button class="btn small primary" type="button" id="look-close">Done</button>
   </div>
 </div>
 <div class="menu" id="menu" role="menu" hidden></div>
@@ -3110,6 +3134,134 @@ function renderTrash() {
   box.append(h('p', { class: 'fine' }, 'Trash stays until you delete it for good.'));
   det.append(box);
   sec.append(det);
+}
+/* ---------- Look closer: the side in view, full screen, with free pinch-zoom and pan ---------- */
+// The napkin's own gestures fold and swipe; here every gesture only moves the camera, so nothing gets in the way of reading.
+const LK = { side: 'front', vb: [0, 0, 800, 800], svg: null, P: new Map(), g: null, tap: 0, tapPt: null };
+function lookSize() { const st = $('#look-stage'); return [Math.max(1, st.clientWidth), Math.max(1, st.clientHeight)]; }
+function lookFitTo(vb) {
+  // Expand a napkin rectangle to the screen's shape, so zooming always fills the screen.
+  const [W, H] = lookSize(), A = W / H;
+  let [x, y, w, h] = vb;
+  if (w / h > A) { const nh = w / A; y -= (nh - h) / 2; h = nh; } else { const nw = h * A; x -= (nw - w) / 2; w = nw; }
+  return [x, y, w, h];
+}
+function lookApply() {
+  const [W, H] = lookSize(), A = W / H;
+  let [x, y, w] = LK.vb;
+  const maxW = Math.max(800, 800 * A) * 1.05;
+  w = Math.min(maxW, Math.max(30, w));
+  const h = w / A;
+  const cx = Math.min(800, Math.max(0, x + w / 2)), cy = Math.min(800, Math.max(0, y + h / 2));
+  LK.vb = [cx - w / 2, cy - h / 2, w, h];
+  if (LK.svg) LK.svg.setAttribute('viewBox', LK.vb.map((n) => n.toFixed(2)).join(' '));
+}
+function lookPt(px, py) {
+  const r = $('#look-stage').getBoundingClientRect();
+  return [LK.vb[0] + ((px - r.left) / r.width) * LK.vb[2], LK.vb[1] + ((py - r.top) / r.height) * LK.vb[3]];
+}
+function lookZoom(f, px, py) {
+  const [sx, sy] = lookPt(px, py);
+  const r = $('#look-stage').getBoundingClientRect();
+  const w = LK.vb[2] / f, h = LK.vb[3] / f;
+  LK.vb = [sx - ((px - r.left) / r.width) * w, sy - ((py - r.top) / r.height) * h, w, h];
+  lookApply();
+}
+function buildLook() {
+  const st = $('#look-stage');
+  st.textContent = '';
+  const cl = S.svg[LK.side].cloneNode(true);
+  cl.querySelectorAll('.hint, .live, .sel, .pins, .hl, .qmark').forEach((n) => n.remove());
+  cl.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+  cl.removeAttribute('aria-label');
+  const paper = el('rect', { x: 0, y: 0, width: 800, height: 800, rx: 6, style: 'fill: var(--paper); stroke: var(--paper-edge)' });
+  cl.insertBefore(paper, cl.querySelector('.base'));
+  st.append(cl);
+  LK.svg = cl;
+  const i = napIndex(S.nid), n = napsOf(S.tid).length;
+  $('#look-where').textContent = `Napkin ${i + 1} of ${n} · ${LK.side}`;
+  $('#look-prev').disabled = i <= 0;
+  $('#look-next').disabled = i >= n - 1;
+  lookApply();
+}
+function openLook() {
+  if (!S.nid) return;
+  LK.side = S.view.side;
+  $('#look').hidden = false;
+  LK.vb = lookFitTo(S.vb[LK.side].slice());
+  buildLook();
+}
+function closeLook() { $('#look').hidden = true; $('#look-stage').textContent = ''; LK.svg = null; LK.P.clear(); LK.g = null; }
+function lookGo(d) {
+  const naps = napsOf(S.tid), i = napIndex(S.nid) + d;
+  if (i < 0 || i >= naps.length) return;
+  openNapkin(naps[i].id);
+  renderSides();
+  LK.vb = lookFitTo([0, 0, 800, 800]);
+  buildLook();
+}
+function bindLook() {
+  const st = $('#look-stage');
+  st.addEventListener('pointerdown', (e) => {
+    st.setPointerCapture(e.pointerId);
+    LK.P.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (LK.P.size === 1) LK.g = { x0: e.clientX, y0: e.clientY, moved: false, t: now() };
+    else if (LK.P.size === 2) { const [a, b] = [...LK.P.values()]; LK.g = { pinch: true, d: Math.hypot(a.x - b.x, a.y - b.y), mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2, moved: true }; }
+  });
+  st.addEventListener('pointermove', (e) => {
+    const p = LK.P.get(e.pointerId);
+    if (!p || !LK.g) return;
+    const r = st.getBoundingClientRect();
+    if (LK.P.size >= 2 && LK.g.pinch) {
+      p.x = e.clientX; p.y = e.clientY;
+      const [a, b] = [...LK.P.values()];
+      const d = Math.hypot(a.x - b.x, a.y - b.y), mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+      LK.vb[0] -= ((mx - LK.g.mx) / r.width) * LK.vb[2];
+      LK.vb[1] -= ((my - LK.g.my) / r.height) * LK.vb[3];
+      if (LK.g.d > 0 && d > 0) lookZoom(d / LK.g.d, mx, my); else lookApply();
+      Object.assign(LK.g, { d, mx, my });
+      return;
+    }
+    const dx = e.clientX - p.x, dy = e.clientY - p.y;
+    p.x = e.clientX; p.y = e.clientY;
+    if (Math.hypot(e.clientX - LK.g.x0, e.clientY - LK.g.y0) > 6) LK.g.moved = true;
+    LK.vb[0] -= (dx / r.width) * LK.vb[2];
+    LK.vb[1] -= (dy / r.height) * LK.vb[3];
+    lookApply();
+  });
+  const up = (e) => {
+    const g = LK.g;
+    LK.P.delete(e.pointerId);
+    if (LK.P.size === 1 && g && g.pinch) { const [q] = [...LK.P.values()]; LK.g = { x0: q.x, y0: q.y, moved: true, t: now() }; return; }
+    if (LK.P.size) return;
+    LK.g = null;
+    if (!g || g.moved || g.pinch || now() - g.t > 350) return;
+    // Double tap: zoom in where you tapped, or back out to the whole side.
+    if (now() - LK.tap < 320 && LK.tapPt && Math.hypot(e.clientX - LK.tapPt[0], e.clientY - LK.tapPt[1]) < 30) {
+      LK.tap = 0;
+      if (LK.vb[2] < lookFitTo([0, 0, 800, 800])[2] * 0.8) { LK.vb = lookFitTo([0, 0, 800, 800]); lookApply(); }
+      else lookZoom(2.5, e.clientX, e.clientY);
+    } else { LK.tap = now(); LK.tapPt = [e.clientX, e.clientY]; }
+  };
+  st.addEventListener('pointerup', up);
+  st.addEventListener('pointercancel', up);
+  st.addEventListener('wheel', (e) => { e.preventDefault(); lookZoom(Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.0018)), e.clientX, e.clientY); }, { passive: false });
+  $('#look-open').addEventListener('click', openLook);
+  $('#look-close').addEventListener('click', closeLook);
+  $('#look-fit').addEventListener('click', () => { LK.vb = lookFitTo([0, 0, 800, 800]); lookApply(); });
+  $('#look-flip').addEventListener('click', () => { LK.side = LK.side === 'front' ? 'back' : 'front'; buildLook(); });
+  $('#look-prev').addEventListener('click', () => lookGo(-1));
+  $('#look-next').addEventListener('click', () => lookGo(1));
+  addEventListener('resize', () => { if (!$('#look').hidden) { const c = [LK.vb[0] + LK.vb[2] / 2, LK.vb[1] + LK.vb[3] / 2], w = LK.vb[2]; LK.vb = lookFitTo([c[0] - w / 2, c[1] - w / 2, w, w]); lookApply(); } });
+  document.addEventListener('keydown', (e) => {
+    if ($('#look').hidden) { if ((e.key === 'l' || e.key === 'L') && !e.ctrlKey && !e.metaKey && !/^(INPUT|TEXTAREA|SELECT)$/.test((e.target && e.target.tagName) || '')) openLook(); return; }
+    if (e.key === 'Escape') closeLook();
+    else if (e.key === '+' || e.key === '=') { const r = $('#look-stage').getBoundingClientRect(); lookZoom(1.4, r.left + r.width / 2, r.top + r.height / 2); }
+    else if (e.key === '-') { const r = $('#look-stage').getBoundingClientRect(); lookZoom(1 / 1.4, r.left + r.width / 2, r.top + r.height / 2); }
+    else if (e.key === 'ArrowLeft') lookGo(-1);
+    else if (e.key === 'ArrowRight') lookGo(1);
+    else if (e.key === 'f' || e.key === 'F') $('#look-flip').click();
+  });
 }
 function openSheet() { $('#sheet').hidden = false; $('#scrim').hidden = false; renderSheet(); $('#sheet-close').focus(); }
 function closeSheet() { $('#sheet').hidden = true; if (!$('#talk').classList.contains('open')) $('#scrim').hidden = true; }
@@ -5626,6 +5778,7 @@ async function boot() {
   bindUI();
   bindGestures();
   bindStrip();
+  bindLook();
   openTable(newDraftTable());
   updateComposer();
   if (!window.rough || !M_) notice('libs', "Some drawing or maths tools didn't load, so the napkin may look plainer and numbers may show “?”. Reloading usually fixes it.", true);
