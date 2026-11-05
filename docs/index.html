@@ -10,7 +10,7 @@
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="icon" href="./icon-192.png">
 <link rel="apple-touch-icon" href="./icon-192.png">
-<!-- napkin viewer e8ecc46ca8 -->
+<!-- napkin viewer a513555962 -->
 <script>
 // Napkin Viewer: a local stand-in for the claude.ai artifact runtime, so the same napkin page runs
 // offline on a phone. Data lives in IndexedDB; there is no Claude, so the conversation is read-only.
@@ -978,6 +978,30 @@ button:disabled { cursor: default; }
     padding-bottom: max(16px, env(safe-area-inset-bottom, 0px));
   }
 }
+.line { position: fixed; inset: 0; z-index: 41; background: var(--table); color: var(--table-ink); display: flex; flex-direction: column; font-family: var(--font-ui); }
+.line-head { display: flex; align-items: center; gap: 8px; padding: max(10px, env(safe-area-inset-top, 0px)) 12px 6px; }
+.line-title { flex: 1; min-width: 0; font-family: var(--font-hand); font-size: 1.35rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.line-tabs { display: flex; gap: 6px; overflow-x: auto; padding: 4px 12px 10px; scrollbar-width: none; flex: none; }
+.line-tabs::-webkit-scrollbar { display: none; }
+.line-tab { flex: none; border: 1px solid var(--panel-line); background: var(--panel); color: inherit; border-radius: 999px; padding: 9px 16px; font: inherit; font-size: .95rem; font-weight: 600; cursor: pointer; }
+.line-tab[aria-current="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.line-tab small { font-weight: 400; opacity: .75; margin-left: 4px; }
+.line-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 12px 16px; touch-action: pan-y; }
+.line-dish { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; border: 1px solid var(--paper-edge); background: var(--paper); color: var(--pen-blue); border-radius: 12px; padding: 16px 14px; margin-bottom: 10px; font-family: var(--font-hand); font-size: 1.3rem; cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.line-dish span { flex: 1; }
+.line-dish small { font-family: var(--font-ui); font-size: .75rem; color: var(--table-muted); }
+.line-card { background: var(--paper); border: 1px solid var(--paper-edge); border-radius: 12px; margin-bottom: 12px; padding: 6px 4px; box-shadow: 0 2px 6px var(--shadow); position: relative; }
+.line-card svg { display: block; width: 100%; height: auto; }
+.line-card.drawing { cursor: zoom-in; }
+.line-card .zoom-hint { position: absolute; right: 8px; top: 8px; font-size: .7rem; color: var(--table-muted); background: var(--panel); border-radius: 999px; padding: 2px 8px; }
+.line-card text { fill: currentColor; }
+.line-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; }
+.line-empty { color: var(--table-muted); text-align: center; padding: 30px 10px; }
+.line-foot { display: flex; align-items: center; gap: 8px; padding: 8px 12px max(10px, env(safe-area-inset-bottom, 0px)); background: var(--panel); border-top: 1px solid var(--panel-line); }
+.line-pos { flex: 1; text-align: center; font-size: .82rem; color: var(--table-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.line-foot .btn[id="line-prev"], .line-foot .btn[id="line-next"] { min-width: 44px; font-size: 1.1rem; }
+.nmeta { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; padding: 0 0 6px 26px; font-size: .78rem; color: var(--table-muted); }
+.nmeta input, .nmeta select { font-size: 14px; border: 1px solid var(--panel-line); background: var(--bubble); border-radius: 6px; padding: 3px 6px; max-width: 150px; }
 .look-btn { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--panel-line); background: var(--panel); color: inherit; border-radius: 999px; padding: 6px 12px; font: inherit; font-size: .84rem; cursor: pointer; }
 .look-btn svg { width: 18px; height: 18px; }
 @media (max-width: 559.98px) { .look-btn .lbl { display: none; } .look-btn { padding: 8px 10px; } }
@@ -1021,6 +1045,10 @@ button:disabled { cursor: default; }
         <div class="title" id="title-wrap">
           <button class="title-btn untitled" id="title-btn" type="button" title="Rename this table">Untitled table</button>
         </div>
+        <button class="chip-btn" id="line-open" type="button" hidden title="Open the line book view of this table">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11"/></svg>
+          <span>Line book</span>
+        </button>
         <button class="chip-btn" id="tables-btn" type="button" aria-haspopup="dialog">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M4 8l8-4 8 4-8 4z"/><path d="M4 12l8 4 8-4"/><path d="M4 16l8 4 8-4"/></svg>
           <span id="tables-count">Tables</span>
@@ -1235,6 +1263,22 @@ button:disabled { cursor: default; }
     <button class="btn small" type="button" id="ctx-select">Copy</button>
     <button class="btn small" type="button" id="ctx-save">Save as a file</button>
   </div>
+</div>
+<div class="line" id="line" role="dialog" aria-modal="true" aria-label="Line book" hidden>
+  <header class="line-head">
+    <button class="btn small" type="button" id="line-back" aria-label="Back to the dish list" hidden>‹ Dishes</button>
+    <strong class="line-title" id="line-title"></strong>
+    <button class="btn small" type="button" id="line-size" aria-pressed="false" title="Larger text">Aa</button>
+    <button class="btn small" type="button" id="line-exit">Napkins</button>
+  </header>
+  <nav class="line-tabs" id="line-tabs" aria-label="Courses"></nav>
+  <main class="line-body" id="line-body"></main>
+  <footer class="line-foot" id="line-foot" hidden>
+    <button class="btn small" type="button" id="line-prev" aria-label="Previous dish">‹</button>
+    <span class="line-pos" id="line-pos"></span>
+    <button class="btn small" type="button" id="line-next" aria-label="Next dish">›</button>
+    <button class="btn small primary" type="button" id="line-img">Share image</button>
+  </footer>
 </div>
 <div class="look" id="look" role="dialog" aria-modal="true" aria-label="Look closer" hidden>
   <div class="look-stage" id="look-stage"></div>
@@ -2903,6 +2947,8 @@ function openTable(tid, nid) {
   if (!target && !S.readOnly) target = { id: createNapkin(tid, '') };
   openNapkin(target ? target.id : null, true);
   loadHist(tid);
+  updateLineBtn();
+  { const tm = metaView('tables').get(tid); if (tm && tm.view === 'line' && (VIEWER || !isDesk())) { LB.course = null; LB.nid = null; openLine(); } else if (!$('#line').hidden) closeLine(); }
   closeSheet();
   closeTalk();
 }
@@ -3040,14 +3086,18 @@ function renderSheet() {
       expBtn));
     if (open) {
       const nl = h('ul', { class: 'nlist' });
+      const lineOn = t.view === 'line';
       naps.forEach((n, i) => {
         nl.append(h('li', { class: 'nrow' },
           h('button', { class: 'nname', type: 'button', onclick: () => openTable(t.id, n.id) }, `${i + 1} · ${n.title || 'Napkin ' + (i + 1)}`),
           S.readOnly ? null : moveSelect(n, (to) => { moveNapkin(n.id, to); renderSheet(); }),
           S.readOnly ? null : h('button', { class: 'btn small', type: 'button', onclick: () => { trashNapkin(n.id); renderSheet(); } }, 'Trash')));
+        if (lineOn && !S.readOnly) nl.append(h('li', null, napMetaRow(t.id, n, naps)));
       });
       li.append(nl);
-      if (!S.readOnly) li.append(h('div', { class: 'tactions' }, h('button', { class: 'btn small danger', type: 'button', onclick: () => { trashTable(t.id); renderSheet(); } }, 'Move table to trash')));
+      if (!S.readOnly) li.append(h('div', { class: 'tactions' },
+        h('button', { class: 'btn small', type: 'button', onclick: () => { setLineMode(t.id, !lineOn); renderSheet(); } }, lineOn ? 'Turn off line book view' : 'Use as a line book (courses, dish pages)'),
+        h('button', { class: 'btn small danger', type: 'button', onclick: () => { trashTable(t.id); renderSheet(); } }, 'Move table to trash')));
     }
     ul.append(li);
   }
@@ -3135,6 +3185,306 @@ function renderTrash() {
   det.append(box);
   sec.append(det);
 }
+/* ---------- Line book: a table read as a menu, by course, one dish per page ---------- */
+const COURSE_ORDER = ['snacks', 'snack', 'canapes', 'canape', 'bread', 'starters', 'starter', 'entrees', 'entree', 'small plates', 'mains', 'main', 'large plates', 'sides', 'side', 'cheese', 'pre dessert', 'desserts', 'dessert', 'petit fours', 'sauces', 'bases', 'prep'];
+const normCourse = (c) => String(c || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+const LB = { course: null, nid: null, big: ls.get('napkin.lineBig') === '1' };
+function setLineMode(tid, on) {
+  const t = metaView('tables').get(tid);
+  if (!t) return;
+  const o = Object.assign({}, t);
+  if (on) o.view = 'line'; else delete o.view;
+  putMeta('tables', tid, o);
+  if (on && tid === S.tid) openLine();
+  updateLineBtn();
+}
+function lineCourses(tid) {
+  const t = metaView('tables').get(tid) || {};
+  const pref = arr(t.courses).map(normCourse);
+  const seen = new Map();
+  for (const n of napsOf(tid)) if (!isPrep(n)) { const c = (n.course || '').trim() || 'Other'; if (!seen.has(normCourse(c))) seen.set(normCourse(c), c); }
+  const rank = (k) => { const a = pref.indexOf(k); if (a >= 0) return a; const b = COURSE_ORDER.indexOf(k); return b >= 0 ? 100 + b : k === 'other' ? 999 : 500; };
+  return [...seen.entries()].sort((a, b) => rank(a[0]) - rank(b[0]) || a[0].localeCompare(b[0])).map(([, c]) => c);
+}
+const napMeta = (id) => { const m = metaView('naps').get(id); return m ? Object.assign({ id }, m) : null; };
+function isPrep(n) { return !!(n && n.prep_for && metaView('naps').get(n.prep_for) && !(metaView('naps').get(n.prep_for) || {}).trashed); }
+function dishesIn(tid, course) { return napsOf(tid).filter((n) => !isPrep(n) && normCourse((n.course || '').trim() || 'Other') === normCourse(course)); }
+function prepsOf(tid, nid) { return napsOf(tid).filter((n) => n.prep_for === nid); }
+function napMetaRow(tid, n, naps) {
+  const known = [...new Set([...lineCourses(tid), 'Entrées', 'Mains', 'Desserts'])];
+  const dl = 'courses-' + n.id;
+  const inp = h('input', { type: 'text', value: n.course || '', placeholder: 'Course', list: dl, 'aria-label': 'Course' });
+  inp.addEventListener('change', () => { const m = metaView('naps').get(n.id); if (!m) return; const o = Object.assign({}, m); const c = str(inp.value, 30).trim(); if (c) o.course = c; else delete o.course; putMeta('naps', n.id, o); });
+  const sel = h('select', { 'aria-label': 'Prep for' }, h('option', { value: '' }, 'A dish'), ...naps.filter((x) => x.id !== n.id && x.prep_for !== n.id).map((x) => h('option', { value: x.id }, 'Prep for ' + (x.title || 'napkin'))));
+  sel.value = n.prep_for || '';
+  sel.addEventListener('change', () => { const m = metaView('naps').get(n.id); if (!m) return; const o = Object.assign({}, m); if (sel.value) o.prep_for = sel.value; else delete o.prep_for; putMeta('naps', n.id, o); renderSheet(); });
+  return h('div', { class: 'nmeta' }, h('datalist', { id: dl }, ...known.map((c) => h('option', { value: c }))), inp, sel);
+}
+function updateLineBtn() { const t = S.tid && metaView('tables').get(S.tid); $('#line-open').hidden = !(t && t.view === 'line'); }
+let wake = null;
+async function keepAwake(on) {
+  try {
+    if (on && !wake && navigator.wakeLock && document.visibilityState === 'visible') { wake = await navigator.wakeLock.request('screen'); wake.addEventListener('release', () => { wake = null; }); }
+    else if (!on && wake) { const w = wake; wake = null; await w.release(); }
+  } catch { wake = null; }
+}
+function openLine(nid) {
+  if (!S.tid) return;
+  closeSheet(); closeTalk();
+  const courses = lineCourses(S.tid);
+  const n = nid && metaView('naps').get(nid);
+  if (n) { LB.nid = nid; const d = isPrep(n) ? metaView('naps').get(n.prep_for) : n; LB.course = (d.course || '').trim() || 'Other'; }
+  if (!LB.course || !courses.some((c) => normCourse(c) === normCourse(LB.course))) { LB.course = courses[0] || 'Other'; LB.nid = null; }
+  if (LB.nid && !napsOf(S.tid).some((x) => x.id === LB.nid)) LB.nid = null;
+  $('#line').hidden = false;
+  keepAwake(true);
+  renderLine();
+}
+function closeLine() { $('#line').hidden = true; keepAwake(false); }
+// Regions as reading cards: the plating drawing first, then the rest in reading order.
+function lineRegions(nid) {
+  const regs = regionsOf(nid).filter((r) => r.items.length);
+  const draws = (r) => r.items.some((it) => it.t === 'svg' || it.t === 'sketch');
+  const plating = (r) => draws(r) && /plat/i.test(r.items.map(itemText).join(' '));
+  const ord = (r) => (r.side === 'back' ? 10 : 0) + Math.min(...r.panels);
+  const first = regs.find(plating) || regs.find((r) => r.items.some((it) => it.t === 'svg'));
+  return [...(first ? [first] : []), ...regs.filter((r) => r !== first).sort((a, b) => ord(a) - ord(b) || a.at - b.at)];
+}
+function cardSvg(r, vw) {
+  const svg = el('svg', { xmlns: NS });
+  el('defs', null, svg);
+  const g = el('g', null, svg);
+  const H = layoutItems({ id: r.id, items: r.items }, g, vw, 1e6, 1, []);
+  g.querySelectorAll('.hl, .qmark').forEach((x) => x.remove());
+  svg.setAttribute('viewBox', `-18 -12 ${vw + 36} ${Math.max(20, H) + 26}`);
+  return svg;
+}
+let lineSig = '';
+function renderLine(force) {
+  if ($('#line').hidden) return;
+  const tid = S.tid;
+  // Data syncs redraw often; only rebuild when something on these pages changed, so scrolling isn't reset.
+  const sig = JSON.stringify([tid, LB, (metaView('tables').get(tid) || {}).courses, napsOf(tid).map((x) => [x.id, x.title, x.course, x.prep_for]), LB.nid ? napView(LB.nid) : null, LB.nid ? S.calc && S.calc.vals : null]);
+  if (!force && sig === lineSig) return;
+  lineSig = sig;
+  const keepScroll = $('#line-body').scrollTop;
+  const t = metaView('tables').get(tid) || {};
+  S.calc = evaluateTable(tid);
+  const courses = lineCourses(tid);
+  const tabs = $('#line-tabs');
+  tabs.textContent = '';
+  for (const c of courses) {
+    const cur = normCourse(c) === normCourse(LB.course);
+    tabs.append(h('button', { class: 'line-tab', type: 'button', 'aria-current': String(cur), onclick: () => { LB.course = c; LB.nid = null; renderLine(); $('#line-body').scrollTop = 0; } }, c, h('small', null, String(dishesIn(tid, c).length))));
+  }
+  const body = $('#line-body');
+  body.textContent = '';
+  $('#line-size').setAttribute('aria-pressed', String(LB.big));
+  const dishes = dishesIn(tid, LB.course);
+  const n = LB.nid && napMeta(LB.nid);
+  $('#line-back').hidden = !n;
+  $('#line-foot').hidden = !n;
+  if (!n) {
+    $('#line-title').textContent = t.title || 'Line book';
+    if (!dishes.length) body.append(h('p', { class: 'line-empty' }, 'No dishes here yet. Give napkins a course in Tables.'));
+    for (const d of dishes) {
+      const preps = prepsOf(tid, d.id);
+      body.append(h('button', { class: 'line-dish', type: 'button', onclick: () => { LB.nid = d.id; renderLine(); body.scrollTop = 0; } },
+        h('span', null, d.title || 'Untitled dish'), preps.length ? h('small', null, `+${preps.length} prep`) : null));
+    }
+    const sel = tabs.querySelector('[aria-current="true"]');
+    if (sel) sel.scrollIntoView({ block: 'nearest', inline: 'center' });
+    return;
+  }
+  $('#line-title').textContent = n.title || 'Untitled dish';
+  const chips = h('div', { class: 'line-chips' });
+  if (isPrep(n)) { const p = metaView('naps').get(n.prep_for); chips.append(h('button', { class: 'btn small', type: 'button', onclick: () => { LB.nid = n.prep_for; renderLine(); body.scrollTop = 0; } }, '‹ Prep for ' + (p.title || 'dish'))); }
+  for (const pr of prepsOf(tid, n.id)) chips.append(h('button', { class: 'btn small', type: 'button', onclick: () => { LB.nid = pr.id; renderLine(); body.scrollTop = 0; } }, 'Prep: ' + (pr.title || 'untitled') + ' ›'));
+  if (chips.childNodes.length) body.append(chips);
+  const vw = LB.big ? 290 : 360;
+  const regs = lineRegions(n.id);
+  if (!regs.length) body.append(h('p', { class: 'line-empty' }, 'Nothing on this napkin yet.'));
+  for (const r of regs) {
+    const drawing = r.items.some((it) => it.t === 'svg' || it.t === 'sketch');
+    const card = h('div', { class: 'line-card' + (drawing ? ' drawing' : '') });
+    card.append(cardSvg(r, vw));
+    if (drawing) {
+      card.append(h('span', { class: 'zoom-hint' }, 'tap to zoom'));
+      card.addEventListener('click', () => lookAtRegion(n.id, r));
+    }
+    body.append(card);
+  }
+  const list = isPrep(n) ? [] : dishes;
+  const i = list.findIndex((d) => d.id === n.id);
+  $('#line-pos').textContent = i >= 0 ? `${LB.course} · ${i + 1} of ${list.length}` : 'Prep';
+  $('#line-prev').disabled = i <= 0;
+  $('#line-next').disabled = i < 0 || i >= list.length - 1;
+  body.scrollTop = keepScroll;
+}
+function lineStep(d) {
+  const n = LB.nid && napMeta(LB.nid);
+  if (!n || isPrep(n)) return;
+  const list = dishesIn(S.tid, LB.course), i = list.findIndex((x) => x.id === n.id) + d;
+  if (i < 0 || i >= list.length) return;
+  LB.nid = list[i].id;
+  renderLine();
+  $('#line-body').scrollTop = 0;
+}
+function lookAtRegion(nid, r) {
+  if (nid !== S.nid) openNapkin(nid, true);
+  renderSides();
+  LK.side = r.side;
+  $('#look').hidden = false;
+  const R = regionRect(r);
+  LK.vb = lookFitTo([R.x, R.y, R.w, R.h]);
+  buildLook();
+}
+// A dish page as one PNG: the same cards, drawn onto a canvas with the napkin fonts embedded.
+let fontCssP = null;
+function embeddedFonts() {
+  if (fontCssP) return fontCssP;
+  fontCssP = (async () => {
+    const link = [...document.querySelectorAll('link[rel="stylesheet"]')].find((l) => /fonts\.googleapis/.test(l.href));
+    if (!link) return '';
+    const css = await (await fetch(link.href)).text();
+    const out = [];
+    for (const block of css.split('@font-face').slice(1)) {
+      const fam = (/font-family:\s*'([^']+)'/.exec(block) || [])[1];
+      if (!/^(Kalam|Caveat)$/.test(fam || '')) continue;
+      if (!/U\+0000-00FF/.test(block)) continue;
+      const url = (/url\(([^)]+)\)/.exec(block) || [])[1];
+      if (!url) continue;
+      const b = await (await fetch(url)).blob();
+      const data = await blobToDataURL(b);
+      out.push(`@font-face{${block.slice(block.indexOf('{') + 1, block.lastIndexOf('}')).replace(url, data)}}`);
+    }
+    return out.join('\n');
+  })().catch(() => '');
+  return fontCssP;
+}
+function cssFor(svg) {
+  const rules = [];
+  for (const sh of document.styleSheets) {
+    let list;
+    try { list = sh.cssRules; } catch { continue; }
+    for (const r of list) {
+      if (!(r instanceof CSSStyleRule)) continue;
+      if (/^(html|body|:root)/.test(r.selectorText)) continue;
+      let hit = false;
+      try { hit = !!svg.querySelector(r.selectorText.split(',').map((x) => x.trim().replace(/^\.(face|look-stage|line-card)\s+/, '')).join(',')); } catch { hit = false; }
+      if (hit) rules.push(r.cssText.replace(/\.(face|look-stage|line-card)\s+/g, ''));
+    }
+  }
+  const css = 'text{fill:currentColor}\n' + rules.join('\n');
+  const cs = getComputedStyle(document.documentElement);
+  const vars = [...new Set(css.match(/--[\w-]+/g) || [])].map((v) => `${v}:${cs.getPropertyValue(v).trim()}`).join(';');
+  return `svg{${vars}}\n${css}`;
+}
+async function inlineImages(svg) {
+  for (const im of svg.querySelectorAll('image')) {
+    const href = im.getAttribute('href');
+    if (!href || href.startsWith('data:')) continue;
+    try { im.setAttribute('href', await blobToDataURL(await (await fetch(href)).blob())); } catch { im.remove(); }
+  }
+}
+function svgToImg(svg) {
+  return new Promise((res, rej) => {
+    const xml = new XMLSerializer().serializeToString(svg);
+    const img = new Image();
+    img.onload = () => res(img);
+    img.onerror = rej;
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(xml);
+  });
+}
+async function dishImage(nid) {
+  const n = metaView('naps').get(nid);
+  const fonts = await embeddedFonts();
+  const W = 1080, pad = 44, vw = 360, cw = W - pad * 2;
+  const parts = [];
+  for (const r of lineRegions(nid)) {
+    const svg = cardSvg(r, vw);
+    const [, , w, hh] = svg.getAttribute('viewBox').split(' ').map(Number);
+    const ph = Math.round(cw * (hh / w));
+    svg.setAttribute('width', cw);
+    svg.setAttribute('height', ph);
+    await inlineImages(svg);
+    const st = document.createElementNS(NS, 'style');
+    st.textContent = fonts + '\n' + cssFor(svg);
+    svg.insertBefore(st, svg.firstChild);
+    parts.push({ img: await svgToImg(svg), h: ph });
+  }
+  const head = 150;
+  const H = head + parts.reduce((a, p) => a + p.h + 28, 0) + pad;
+  const c = document.createElement('canvas');
+  c.width = W; c.height = H;
+  const g = c.getContext('2d');
+  const cs = getComputedStyle(document.documentElement);
+  g.fillStyle = cs.getPropertyValue('--paper').trim() || '#fbfaf5';
+  g.fillRect(0, 0, W, H);
+  g.fillStyle = cs.getPropertyValue('--pen-blue').trim() || '#233f92';
+  g.font = '700 54px Kalam, "Segoe Print", cursive';
+  g.fillText(n.title || 'Dish', pad, 82);
+  g.fillStyle = cs.getPropertyValue('--pencil').trim() || '#77746c';
+  g.font = '400 28px Kalam, "Segoe Print", cursive';
+  const t = metaView('tables').get(S.tid) || {};
+  g.fillText([n.course, t.title].filter(Boolean).join(' · '), pad, 124);
+  let y = head;
+  for (const p of parts) {
+    g.strokeStyle = cs.getPropertyValue('--paper-edge').trim() || '#d6d1c2';
+    g.lineWidth = 2;
+    g.strokeRect(pad - 10, y - 10, cw + 20, p.h + 20);
+    g.drawImage(p.img, pad, y, cw, p.h);
+    y += p.h + 28;
+  }
+  return canvasBlob(c);
+}
+async function shareDish() {
+  const n = LB.nid && napMeta(LB.nid);
+  if (!n) return;
+  const btn = $('#line-img');
+  btn.disabled = true;
+  toast('Making the image…');
+  try {
+    const blob = await dishImage(n.id);
+    const name = (n.title || 'dish').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '.png';
+    const file = new File([blob], name, { type: 'image/png' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: n.title || 'Dish' }); return; } catch (e) { if (e && e.name === 'AbortError') return; }
+    }
+    if (RT.downloads) { await RT.downloads.save({ filename: name, data: blob }); toast('Saved the image.'); }
+    else { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }
+  } catch (e) {
+    if (!e || e.code !== 'declined') { console.error('napkin: image failed', e); toast("Couldn't make the image."); }
+  } finally { btn.disabled = false; }
+}
+function bindLine() {
+  $('#line-open').addEventListener('click', () => openLine(S.nid));
+  $('#line-exit').addEventListener('click', () => { const nid = LB.nid; closeLine(); if (nid && nid !== S.nid) openNapkin(nid); });
+  $('#line-back').addEventListener('click', () => { const n = LB.nid && napMeta(LB.nid); LB.nid = n && isPrep(n) ? n.prep_for : null; renderLine(); });
+  $('#line-prev').addEventListener('click', () => lineStep(-1));
+  $('#line-next').addEventListener('click', () => lineStep(1));
+  $('#line-img').addEventListener('click', shareDish);
+  $('#line-size').addEventListener('click', () => { LB.big = !LB.big; ls.set('napkin.lineBig', LB.big ? '1' : '0'); renderLine(); });
+  // Swipe sideways on a dish page for the next or previous dish in the course.
+  const body = $('#line-body');
+  let sw = null;
+  body.addEventListener('pointerdown', (e) => { if (e.pointerType !== 'mouse') sw = { x: e.clientX, y: e.clientY, t: now() }; });
+  body.addEventListener('pointercancel', () => { sw = null; });
+  body.addEventListener('pointerup', (e) => {
+    if (!sw || !LB.nid) { sw = null; return; }
+    const dx = e.clientX - sw.x, dy = e.clientY - sw.y;
+    if (Math.abs(dx) > 70 && Math.abs(dy) < Math.abs(dx) * 0.5 && now() - sw.t < 700) lineStep(dx < 0 ? 1 : -1);
+    sw = null;
+  });
+  document.addEventListener('visibilitychange', () => { if (!$('#line').hidden) keepAwake(true); });
+  document.addEventListener('keydown', (e) => {
+    if ($('#line').hidden || !$('#look').hidden || /^(INPUT|TEXTAREA|SELECT)$/.test((e.target && e.target.tagName) || '')) return;
+    if (e.key === 'ArrowRight') lineStep(1);
+    else if (e.key === 'ArrowLeft') lineStep(-1);
+    else if (e.key === 'Escape') { if (LB.nid) $('#line-back').click(); else closeLine(); }
+  });
+}
+
 /* ---------- Look closer: the side in view, full screen, with free pinch-zoom and pan ---------- */
 // The napkin's own gestures fold and swipe; here every gesture only moves the camera, so nothing gets in the way of reading.
 const LK = { side: 'front', vb: [0, 0, 800, 800], svg: null, P: new Map(), g: null, tap: 0, tapPt: null };
@@ -3263,7 +3613,8 @@ function bindLook() {
     else if (e.key === 'f' || e.key === 'F') $('#look-flip').click();
   });
 }
-function openSheet() { $('#sheet').hidden = false; $('#scrim').hidden = false; renderSheet(); $('#sheet-close').focus(); }
+function openSheet() {
+  if (!$('#line').hidden) closeLine(); $('#sheet').hidden = false; $('#scrim').hidden = false; renderSheet(); $('#sheet-close').focus(); }
 function closeSheet() { $('#sheet').hidden = true; if (!$('#talk').classList.contains('open')) $('#scrim').hidden = true; }
 function openTalk() { if (isDesk()) return; $('#talk').classList.add('open'); $('#scrim').hidden = false; renderChat(true); }
 function closeTalk() { $('#talk').classList.remove('open'); if ($('#sheet').hidden) $('#scrim').hidden = true; }
@@ -4035,8 +4386,9 @@ REPLY FORMAT: exactly one JSON object, nothing around it. "kind" and "reply" are
   "rules_add": [{"text": "...", "scope": "everywhere"}],
   "rules_remove": ["<rule id>"],
   "table_title": "max 5 words; set it on the first turn or when the topic changes",
-  "new_napkins": [{"id": "N1", "title": "max 4 words"}],
+  "new_napkins": [{"id": "N1", "title": "max 4 words", "course": "optional", "prep_for": "optional napkin id"}],
   "napkin_titles": {"<napkin id>": "max 4 words"},
+  "napkin_meta": {"<napkin id>": {"course": "Entrées", "prep_for": "<napkin id of the dish it's prep for, or null>"}},
   "regions": [{"id": "a", "napkin": "<napkin id; default is the one in view>", "side": "front", "panels": [1]}],
   "writes": [{"region": "a", "mode": "append", "items": [ ... ]}],
   "edits": [{"id": "<item id>", "item": { ...complete replacement item... }}],
@@ -4074,6 +4426,7 @@ MARKS annotate the user's own drawing, in side coordinates (0-800 on both axes),
 IMAGES: the message lists any attached images. A napkin snapshot shows a whole side of the napkin in view, with a faint 100-unit grid numbered along the top and left edges and your regions outlined with their ids. Black and red freehand strokes are the user's; blue handwriting is yours. Use the grid for mark coordinates.
 
 ORGANISING
+- Napkins can have a "course" (Entrées, Mains, Desserts...) and a "prep_for" link to the dish napkin they are prep for; the line book view groups dishes by course and lists prep under its dish. When the user is building a menu or recipe book, give each new dish napkin a course, and link prep napkins to their dish. Change them with "napkin_meta".
 - "other_tables" lists the user's other tables and their napkins.
 - Create tables, rename other tables or move napkins only when the user asks, or when they clearly switch to an unrelated topic. Say in the reply exactly what you moved or created. The user can undo any turn.
 
@@ -4119,7 +4472,7 @@ function tableState(tid, cons) {
       };
     });
     return {
-      id: n.id, number: i + 1, title: n.title || '',
+      id: n.id, number: i + 1, title: n.title || '', course: n.course || undefined, prep_for: n.prep_for || undefined,
       free_panels: { front: freePanels(n.id, 'front'), back: freePanels(n.id, 'back') },
       regions: regs,
       marks: marksOf(n.id).length || undefined,
@@ -4444,13 +4797,14 @@ function applyResponse(res0, cons, tid, opts = {}) {
 
   // Which kind of turn: only "draw" may change the napkins.
   const NAP_KEYS = ['regions', 'writes', 'edits', 'delete_items', 'remove_regions', 'marks', 'new_napkins', 'move', 'tables'];
-  const hasNapOps = NAP_KEYS.some((k) => arr(res[k]).length) || !!res.clear_marks || (isObj(res.napkin_titles) && Object.keys(res.napkin_titles).length > 0);
+  const hasNapOps = NAP_KEYS.some((k) => arr(res[k]).length) || !!res.clear_marks || (isObj(res.napkin_titles) && Object.keys(res.napkin_titles).length > 0) || (isObj(res.napkin_meta) && Object.keys(res.napkin_meta).length > 0);
   let kind = ['chat', 'ask', 'draw'].includes(res.kind) ? res.kind : (hasNapOps ? 'draw' : arr(res.questions).length ? 'ask' : 'chat');
   if (kind !== 'draw' && hasNapOps) {
     issues.push(`That turn was "${kind}", so its napkin changes were skipped. Use "draw" to change the napkins.`);
     for (const k of NAP_KEYS) res[k] = [];
     res.clear_marks = false;
     res.napkin_titles = null;
+    res.napkin_meta = null;
   }
   const questions = arr(res.questions).filter(isObj).slice(0, 3).map((q) => {
     const o = { q: str(q.q || q.question, 200).trim(), options: arr(q.options).map((x) => str(x, 80).trim()).filter(Boolean).slice(0, 4) };
@@ -4469,7 +4823,7 @@ function applyResponse(res0, cons, tid, opts = {}) {
     if (napIds.size >= MAX_NAPS) { block(`This table already has ${MAX_NAPS} napkins.`); break; }
     const nid = rid(), t = now();
     touchMeta('naps', nid);
-    putMeta('naps', nid, { table: tid, title: str(n.title, 60).trim(), n: maxN(tid) + 1, createdAt: t, updatedAt: t, used: 0 });
+    putMeta('naps', nid, Object.assign({ table: tid, title: str(n.title, 60).trim(), n: maxN(tid) + 1, createdAt: t, updatedAt: t, used: 0 }, n.course ? { course: str(n.course, 30).trim() } : {}));
     napIds.add(nid);
     createdNaps.push(nid);
     if (n.id != null) napAlias[String(n.id)] = nid;
@@ -4482,6 +4836,19 @@ function applyResponse(res0, cons, tid, opts = {}) {
     const byNum = napsOf(tid)[Number(sv) - 1];
     return byNum ? byNum.id : null;
   };
+  // Course and prep links (line book). prep_for null clears it.
+  const metaReq = Object.assign({}, isObj(res.napkin_meta) ? res.napkin_meta : {});
+  for (const n of arr(res.new_napkins)) if (isObj(n) && n.id != null && napAlias[String(n.id)] && n.prep_for != null) metaReq[String(n.id)] = Object.assign({}, metaReq[String(n.id)], { prep_for: n.prep_for });
+  for (const [k, v] of Object.entries(metaReq)) {
+    if (!isObj(v)) continue;
+    const nid = resolveNap(k);
+    const m = nid && metaView('naps').get(nid);
+    if (!m) continue;
+    const o = Object.assign({}, m);
+    if ('course' in v) { const c = str(v.course, 30).trim(); if (c) o.course = c; else delete o.course; }
+    if ('prep_for' in v) { const p = v.prep_for == null || v.prep_for === '' ? null : resolveNap(v.prep_for); if (p && p !== nid) o.prep_for = p; else delete o.prep_for; }
+    if (JSON.stringify(o) !== JSON.stringify(m)) setMeta('naps', nid, o);
+  }
   if (isObj(res.napkin_titles)) {
     for (const [k, v] of Object.entries(res.napkin_titles)) {
       const nid = resolveNap(k);
@@ -5008,14 +5375,14 @@ async function exportTables(which) {
       const d = (await readDoc('napdata/' + n.id)) || {};
       const ink = (await readDoc('napink/' + n.id)) || {};
       for (const r of Object.values(cleanMap(d.regions))) for (const it of arr(isObj(r) ? r.items : [])) if (isObj(it) && it.t === 'svg' && it.asset) photoIds.add(it.asset);
-      naps.push({ id: n.id, title: n.title || '', n: n.n, createdAt: n.createdAt, updatedAt: n.updatedAt, regions: cleanMap(d.regions), marks: cleanMap(d.marks), strokes: cleanMap(ink.strokes) });
+      naps.push({ id: n.id, title: n.title || '', course: n.course, prep_for: n.prep_for, n: n.n, createdAt: n.createdAt, updatedAt: n.updatedAt, regions: cleanMap(d.regions), marks: cleanMap(d.marks), strokes: cleanMap(ink.strokes) });
     }
     const brief = (await readDoc('brief/' + tid)) || {};
     let rubbedOut = [];
     if (tid === S.tid) rubbedOut = rubList();
     else if (RT.db) { try { rubbedOut = (await RT.db.collection('rub').where('table', '==', tid).limit(400).get()).docs.map((d) => Object.assign({ id: d.id }, d.data())); } catch { rubbedOut = []; } }
     out.tables.push({
-      id: tid, title: t.title || '', createdAt: t.createdAt, updatedAt: t.updatedAt, messages: msgs, napkins: naps,
+      id: tid, title: t.title || '', view: t.view, courses: t.courses, createdAt: t.createdAt, updatedAt: t.updatedAt, messages: msgs, napkins: naps,
       brief: Object.assign({}, brief, { rules: cleanMap(brief.rules) }),
       rubbed: rubbedOut.map((e) => ({ nid: e.nid, side: e.side, panels: e.panels, rid: e.rid, item: e.item, why: e.why, ts: e.ts })),
     });
@@ -5053,7 +5420,7 @@ function buildContext(tid) {
   const b = briefOf(tid);
   const turnNo = curTurn(tid) + 1;
   const napkins = napsOf(tid).map((n, i) => ({
-    id: n.id, number: i + 1, title: n.title || '',
+    id: n.id, number: i + 1, title: n.title || '', course: n.course || undefined, prep_for: n.prep_for || undefined,
     free_panels: { front: freePanels(n.id, 'front'), back: freePanels(n.id, 'back') },
     sections: regionsOf(n.id).map((r) => ({ side: r.side, panels: r.panels, items: r.items.map((it) => { const o = stripItem(it, turnNo); delete o.id; return o; }) })),
   }));
@@ -5297,7 +5664,7 @@ function noteToResponse(note, napkins, tid, mode, blank) {
       if (!place && alias) { place = fitIn(alias, null, side, shape); ref = alias; }
       if (!place) {
         alias = 'IMP' + an++;
-        res.new_napkins.push({ id: alias, title: str(nk.title || note.title, 60) });
+        res.new_napkins.push(Object.assign({ id: alias, title: str(nk.title || note.title, 60) }, nk.course ? { course: nk.course } : {}, nk.prep_for ? { prep_for: nk.prep_for } : {}));
         place = fitIn(alias, null, side, shape);
         ref = alias;
       }
@@ -5449,9 +5816,10 @@ async function importData(data) {
     if (!isObj(t)) continue;
     const tid = rid(), ts = now();
     if (VIEWER && t.id != null) for (const [oid, ot] of [...metaView('tables')]) if (ot.src === String(t.id)) await deleteForever('table', oid);
-    putMeta('tables', tid, Object.assign({ title: str(t.title, 60) || 'Imported table', createdAt: num(t.createdAt, ts), updatedAt: ts, v: 2 }, t.id != null ? { src: str(t.id, 40) } : {}));
+    putMeta('tables', tid, Object.assign({ title: str(t.title, 60) || 'Imported table', createdAt: num(t.createdAt, ts), updatedAt: ts, v: 2 }, t.id != null ? { src: str(t.id, 40) } : {}, t.view === 'line' ? { view: 'line', courses: arr(t.courses).map((c) => str(c, 30)).slice(0, 20) } : {}));
     const taken = new Set();
     const napMap = {};
+    const prepLinks = [];
     let n = 0;
     for (const nap of arr(t.napkins).slice(0, MAX_NAPS)) {
       if (!isObj(nap)) continue;
@@ -5478,10 +5846,12 @@ async function importData(data) {
         if (!pts.length) continue;
         strokes[rid()] = { s: s.s === 'back' ? 'back' : 'front', c: s.c === 'r' ? 'r' : 'k', p: pts.map(([x, y]) => `${Math.round(x)},${Math.round(y)}`).join(' '), at: num(s.at, ts) };
       }
-      putMeta('naps', nid, { table: tid, title: str(nap.title, 60), n: ++n, createdAt: num(nap.createdAt, ts), updatedAt: ts, used: Object.values(regions).reduce((a, r) => a + r.panels.length, 0) });
+      putMeta('naps', nid, Object.assign({ table: tid, title: str(nap.title, 60), n: ++n, createdAt: num(nap.createdAt, ts), updatedAt: ts, used: Object.values(regions).reduce((a, r) => a + r.panels.length, 0) }, nap.course ? { course: str(nap.course, 30) } : {}));
+      if (nap.prep_for) prepLinks.push([nid, String(nap.prep_for)]);
       napDoc(nid).replace({ v: 2, regions, marks });
       if (Object.keys(strokes).length) inkDoc(nid).replace({ strokes });
     }
+    for (const [nid, old] of prepLinks) { const m = metaView('naps').get(nid); if (m && napMap[old]) putMeta('naps', nid, Object.assign({}, m, { prep_for: napMap[old] })); }
     const msgs = {};
     for (const m of Object.values(isObj(t.messages) ? t.messages : {})) {
       if (!isObj(m) || !['user', 'claude', 'note'].includes(m.role)) continue;
@@ -5612,6 +5982,7 @@ function flushRender() {
   if (parts.has('ink') || parts.has('sides')) renderTools();
   if (parts.has('chat') || parts.has('sides') || parts.has('meta')) renderChat();
   if (parts.has('brief') || parts.has('chat') || parts.has('meta')) renderBrief();
+  if (parts.has('meta') || parts.has('sides')) { updateLineBtn(); renderLine(); }
 }
 function renderAll() {
   renderHeader();
@@ -5625,6 +5996,8 @@ function renderAll() {
   updateChips();
   renderSheet();
   renderBrief();
+  updateLineBtn();
+  renderLine();
 }
 
 /* ================= wiring ================= */
@@ -5779,6 +6152,7 @@ async function boot() {
   bindGestures();
   bindStrip();
   bindLook();
+  bindLine();
   openTable(newDraftTable());
   updateComposer();
   if (!window.rough || !M_) notice('libs', "Some drawing or maths tools didn't load, so the napkin may look plainer and numbers may show “?”. Reloading usually fixes it.", true);

@@ -1,5 +1,5 @@
 // Napkin Viewer service worker: keeps the app usable offline and receives files shared from Android.
-const VERSION = 'e8ecc46ca8';
+const VERSION = 'a513555962';
 const SHELL = 'napkin-shell-' + VERSION;
 const LIBS = 'napkin-libs-v1';
 const SHELL_FILES = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
